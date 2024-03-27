@@ -33,30 +33,6 @@ driver = webdriver.Chrome(options=chrome_options)
 
 driver.get("https://www.lkqpickyourpart.com/inventory/orlando-1134/")
 
-try:
-    WebDriverWait(driver, 2).until(EC.element_to_be_clickable((By.XPATH, "//a[@class='pypvi_ymm']")))
-except TimeoutException:
-    pass
-
-def scroll_down(f=None):
-    print('scrolling')
-    last_height = driver.execute_script("return document.body.scrollHeight")
-    while True:
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(3)
-        if f != None:
-            if f():
-                return
-        new_height = driver.execute_script("return document.body.scrollHeight")
-        if new_height == last_height:
-            break
-        last_height = new_height
-        print('i')
-
-print('scrolling down')
-scroll_down()
-print('done scrolling')
-
 cars={}
 if os.path.exists('cars.json'):
     f=open('cars.json', 'r')
@@ -65,8 +41,22 @@ if os.path.exists('cars.json'):
 print(f'loaded {len(cars)} existing cars')
 before_len = len(cars)
 
-car_entries = driver.find_elements(By.XPATH, "//div[@class='pypvi_resultRow']")
-
 print('scraping inventory')
-for car in tqdm(car_entries)
+cars_e = driver.find_elements(By.XPATH, "//div[@class='pypvi_resultRow']")
+cars = []
+
+for car_e in tqdm(cars_e):
+    car = {}
+    r = re.compile("(\d{4}) (\w*) ([\w ]*).*\nColor")
+    car['year'] = r.search(car_e.text).group(1)
+    car['make'] = r.search(car_e.text).group(2)
+    car['model'] = r.search(car_e.text).group(3)
+    car['vin'] = re.search("VIN: (\w*)", car_e.text).group(1)
+    car['color'] = re.search("Color: (\w*)", car_e.text).group(1)
+    car['section'] = re.search("Section: ([\w\/]*)", car_e.text).group(1)
+    car['row'] = re.search("Row: (\w*)", car_e.text).group(1)
+    car['vin'] = re.search("Space: (\w*)", car_e.text).group(1)
+    car['vin'] = re.search("Stock #: (\w* \w)", car_e.text).group(1)
+    car['vin'] = re.search("Available: (\w*)", car_e.text).group(1)
+    print(car['vin'])
 
