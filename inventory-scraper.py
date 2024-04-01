@@ -79,13 +79,15 @@ for car_e in tqdm(cars_e):
         car['stock #'] = re.search("Stock #: (\w*.\w)", car_e.text).group(1)
         car['available'] = re.search("Available: (\w*)", car_e.text).group(1)
         car['image_url'] = car_e.find_element(By.XPATH, "./a[1]/img[1]").get_attribute("src")
-    except Error:
-        print(Error)
+        cars.append(car)
+    except Exception as e:
+        # TODO handle these individually so we don't throw out the whole entry 
+        print(e)
 #    print(f"{car['year']} {car['make']} {car['model']} {car['vin']} {car['image_url']}")
 
 print(f'found {len(cars)} cars')
 
-with open('colors.json', 'w') as f:
+with open('cars.json', 'w') as f:
     f.write(json.dumps(cars, indent=4))
     f.close()
 
