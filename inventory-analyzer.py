@@ -5,7 +5,6 @@ from tqdm import tqdm
 import re
 import json
 import os
-import plotly.express as px
 
 cars={}
 if os.path.exists('cars.json'):
