@@ -12,6 +12,7 @@ from tqdm import tqdm
 import re
 import json
 import os
+import arrow
 
 headless = False
 
@@ -42,7 +43,6 @@ def scroll_down(f=None):
         if new_height == last_height:
             break
         last_height = new_height
-        print('i')
 
 print('loading page')
 driver.get("https://www.lkqpickyourpart.com/inventory/orlando-1134/")
@@ -51,41 +51,57 @@ print('scrolling down')
 scroll_down()
 print('done scrolling')
 
-cars={}
+cars=[]
 if os.path.exists('cars.json'):
     f=open('cars.json', 'r')
     cars = json.loads(f.read())
     f.close()
 print(f'loaded {len(cars)} existing cars')
 before_len = len(cars)
+newcars = 0
 
 print('scraping inventory')
 cars_e = driver.find_elements(By.XPATH, "//div[@class='pypvi_resultRow']")
-cars = []
+
+def findcar(cars, vin):
+    for car in cars:
+        if car['vin'] == vin:
+            return car
 
 for car_e in tqdm(cars_e):
     try:
-        print(car_e.text)
+#        print(car_e.text)
         car = {}
+
+        car['vin'] = re.search("VIN: (\w*)", car_e.text).group(1)
+        existing_car = findcar(cars, car['vin']) 
+        if existing_car != None:
+            existing_car['last_seen'] = arrow.utcnow().isoformat()
+            continue;
+
         r = re.compile("(\d{4}) ([\w\-]*) ([\w\- ]*).*\nColor")
         car['year'] = r.search(car_e.text).group(1)
         car['make'] = r.search(car_e.text).group(2)
         car['model'] = r.search(car_e.text).group(3)
-        car['vin'] = re.search("VIN: (\w*)", car_e.text).group(1)
         car['color'] = re.search("Color: (\w*)", car_e.text).group(1)
         car['section'] = re.search("Section: ([\w\/]*)", car_e.text).group(1)
         car['row'] = re.search("Row: (\w*)", car_e.text).group(1)
         car['space'] = re.search("Space: (\w*)", car_e.text).group(1)
         car['stock #'] = re.search("Stock #: (\w*.\w)", car_e.text).group(1)
-        car['available'] = re.search("Available: (\w*)", car_e.text).group(1)
+        car['available_date'] = re.search("Available: (\w*)", car_e.text).group(1)
         car['image_url'] = car_e.find_element(By.XPATH, "./a[1]/img[1]").get_attribute("src")
+        car['first_seen'] = arrow.utcnow().isoformat()
+        car['last_seen'] = arrow.utcnow().isoformat()
         cars.append(car)
+        newcars+=1
     except Exception as e:
         # TODO handle these individually so we don't throw out the whole entry 
         print(e)
 #    print(f"{car['year']} {car['make']} {car['model']} {car['vin']} {car['image_url']}")
 
-print(f'found {len(cars)} cars')
+# TODO check for cars that aren't there any more
+
+print(f'prev {before_len}, new total {len(cars)}, with {newcars} new cars found')
 
 with open('cars.json', 'w') as f:
     f.write(json.dumps(cars, indent=4))
