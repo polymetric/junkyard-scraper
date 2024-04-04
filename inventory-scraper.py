@@ -15,8 +15,6 @@ import os
 import arrow
 import traceback
 
-headless = False
-
 os.system('killall chromium')
 
 #display = Display(backend="xvfb", visible=1, size=(800, 800))
@@ -25,7 +23,7 @@ chrome_options = webdriver.ChromeOptions()
 prefs = {"profile.default_content_setting_values.notifications" : 2}
 chrome_options.add_experimental_option("prefs",prefs)
 chrome_options.add_argument("user-data-dir=selenium")
-#chrome_options.add_argument('headless')
+chrome_options.add_argument('headless')
 chrome_options.add_argument('--disable-gpu')
 
 #specify the path to chromedriver.exe (download and save on your computer)
@@ -100,7 +98,7 @@ for car_e in tqdm(cars_e):
         getparam('row', "Row: (\w*)", 1)
         getparam('space', "Space: (\w*)", 1)
         getparam('stock #', "Stock #: (\w*.\w)", 1)
-        getparam('available_date', "Available: (\w*)", 1)
+        getparam('available_date', "Available: ([\d/]*)", 1)
         car['image_url'] = car_e.find_element(By.XPATH, "./a[1]/img[1]").get_attribute("src")
         car['first_seen'] = arrow.utcnow().isoformat()
         car['last_seen'] = arrow.utcnow().isoformat()
