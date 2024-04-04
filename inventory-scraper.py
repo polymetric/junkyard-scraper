@@ -13,6 +13,7 @@ import re
 import json
 import os
 import arrow
+import traceback
 
 headless = False
 
@@ -69,34 +70,41 @@ def findcar(cars, vin):
             return car
 
 for car_e in tqdm(cars_e):
-    try:
 #        print(car_e.text)
-        car = {}
+    car = {}
 
-        car['vin'] = re.search("VIN: (\w*)", car_e.text).group(1)
-        existing_car = findcar(cars, car['vin']) 
-        if existing_car != None:
-            existing_car['last_seen'] = arrow.utcnow().isoformat()
-            continue;
+    car['vin'] = re.search("VIN: (\w*)", car_e.text).group(1)
 
-        r = re.compile("(\d{4}) ([\w\-]*) ([\w\- ]*).*\nColor")
-        car['year'] = r.search(car_e.text).group(1)
-        car['make'] = r.search(car_e.text).group(2)
-        car['model'] = r.search(car_e.text).group(3)
-        car['color'] = re.search("Color: (\w*)", car_e.text).group(1)
-        car['section'] = re.search("Section: ([\w\/]*)", car_e.text).group(1)
-        car['row'] = re.search("Row: (\w*)", car_e.text).group(1)
-        car['space'] = re.search("Space: (\w*)", car_e.text).group(1)
-        car['stock #'] = re.search("Stock #: (\w*.\w)", car_e.text).group(1)
-        car['available_date'] = re.search("Available: (\w*)", car_e.text).group(1)
-        car['image_url'] = car_e.find_element(By.XPATH, "./a[1]/img[1]").get_attribute("src")
-        car['first_seen'] = arrow.utcnow().isoformat()
-        car['last_seen'] = arrow.utcnow().isoformat()
-        cars.append(car)
-        newcars+=1
-    except Exception as e:
-        # TODO handle these individually so we don't throw out the whole entry 
-        print(e)
+    # check if car has already been scraped
+    existing_car = findcar(cars, car['vin']) 
+    if existing_car != None:
+        existing_car['last_seen'] = arrow.utcnow().isoformat()
+        continue;
+
+    def getparam(param, regex, group=0):
+        try:
+            car[param] = re.search(regex, car_e.text).group(group)
+        except Exception:
+#            print(f"error on param {param}")
+#            print(traceback.format_exc())
+            pass
+
+    r = re.compile("(\d{4}) ([\w\-]*) ([\w\- ]*).*\nColor")
+    getparam('year', r, 1)
+    getparam('make', r, 2)
+    getparam('model', r, 3)
+    getparam('color', "Color: (\w*)", 1)
+    getparam('section', "Section: ([\w\/]*)", 1)
+    getparam('row', "Row: (\w*)", 1)
+    getparam('space', "Space: (\w*)", 1)
+    getparam('stock #', "Stock #: (\w*.\w)", 1)
+    getparam('available_date', "Available: (\w*)", 1)
+    car['image_url'] = car_e.find_element(By.XPATH, "./a[1]/img[1]").get_attribute("src")
+    car['first_seen'] = arrow.utcnow().isoformat()
+    car['last_seen'] = arrow.utcnow().isoformat()
+    car['available'] = "true"
+    cars.append(car)
+    newcars+=1
 #    print(f"{car['year']} {car['make']} {car['model']} {car['vin']} {car['image_url']}")
 
 # TODO check for cars that aren't there any more
