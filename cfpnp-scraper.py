@@ -42,33 +42,32 @@ before_len = len(cars)
 newcars = 0
 
 print('scraping inventory')
-cars_e = driver.find_elements(By.XPATH, "//div[@class='pypvi_resultRow']")
+cars_e = driver.find_elements(By.XPATH, "//tr")
 
 def findcar(cars, vin):
     for car in cars:
         if car['vin'] == vin:
             return car
 
+print(len(cars_e))
+
 for car_e in tqdm(cars_e):
     try:
 #        print(car_e.text)
         car = {}
 
-        car['vin'] = re.search("VIN: (\w*)", car_e.text).group(1)
+#        car['vin'] = re.search("VIN: (\w*)", car_e.text).group(1)
 
         # check if car has already been scraped
-        existing_car = findcar(cars, car['vin']) 
-        if existing_car != None:
-            existing_car['last_seen'] = arrow.utcnow().isoformat()
-            continue;
+#        existing_car = findcar(cars, car['vin']) 
+#        if existing_car != None:
+#            existing_car['last_seen'] = arrow.utcnow().isoformat()
+#            continue;
 
-        def getparam(param, regex, group=0):
-            try:
-                car[param] = re.search(regex, car_e.text).group(group)
-            except Exception:
-#                print(f"error on param {param}")
-#                print(traceback.format_exc())
-                pass
+        #car['year'] = car_e.find_element(By.XPATH, "./td[@data-label='Year']").text
+        car['year'] = car_e.find_element(By.XPATH, "./td").text
+        print(car)
+        exit()
 
         r = re.compile("(\d{4}) ([\w\-]*) ([\w\- ]*).*\nColor")
         getparam('year', r, 1)
@@ -88,8 +87,8 @@ for car_e in tqdm(cars_e):
         cars.append(car)
         newcars+=1
 #        print(f"{car['year']} {car['make']} {car['model']} {car['vin']} {car['image_url']}")
-    except Exception as e:
-        traceback.print_tb(e.__traceback__)
+    except Exception:
+        print(traceback.format_exc())
 
 # TODO check for cars that aren't there any more
 
