@@ -15,6 +15,8 @@ import os
 import arrow
 import traceback
 
+time_start = arrow.utcnow()
+
 os.system('killall chromium')
 
 #display = Display(backend="xvfb", visible=1, size=(800, 800))
@@ -109,9 +111,18 @@ for car_e in tqdm(cars_e):
     except Exception as e:
         traceback.print_tb(e.__traceback__)
 
-# TODO check for cars that aren't there any more
+unavailable_count = 0
+became_unavailable = 0
+# check for cars that aren't there any more
+for car in cars:
+    if car['available'] == "true" and arrow.get(car['last_seen']) < time_start:
+        car['available'] = "false"
+        became_unavailable += 1
+    if car['available'] == "false":
+        unavailable_count += 1
 
 print(f'prev {before_len}, new total {len(cars)}, with {newcars} new cars found')
+print(f'unavailable: {unavailable_count}, no longer available since last scrape: {became_unavailable}')
 
 with open('cars.json', 'w') as f:
     f.write(json.dumps(cars, indent=4))
