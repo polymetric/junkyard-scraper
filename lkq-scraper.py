@@ -52,9 +52,10 @@ print('scrolling down')
 scroll_down()
 print('done scrolling')
 
+filename = "cars_lkq.json"
 cars=[]
-if os.path.exists('cars.json'):
-    f=open('cars.json', 'r')
+if os.path.exists(filename):
+    f=open(filename, 'r')
     cars = json.loads(f.read())
     f.close()
 print(f'loaded {len(cars)} existing cars')
@@ -124,7 +125,7 @@ for car in cars:
 print(f'prev {before_len}, new total {len(cars)}, with {newcars} new cars found')
 print(f'unavailable: {unavailable_count}, no longer available since last scrape: {became_unavailable}')
 
-with open('cars.json', 'w') as f:
+with open(filename, 'w') as f:
     f.write(json.dumps(cars, indent=4))
     f.close()
 

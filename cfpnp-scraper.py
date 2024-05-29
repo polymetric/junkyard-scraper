@@ -15,6 +15,8 @@ import os
 import arrow
 import traceback
 
+time_start = arrow.utcnow()
+
 os.system('killall chromium 2>/dev/null')
 
 #display = Display(backend="xvfb", visible=1, size=(800, 800))
@@ -33,14 +35,16 @@ driver = webdriver.Chrome(options=chrome_options)
 print('loading page')
 driver.get("https://centralfloridapickandpay.com/vehicle-inventory/")
 
+filename = "cars_cfpnp.json"
+
 cars=[]
-#if os.path.exists('cars.json'):
-#    f=open('cars.json', 'r')
-#    cars = json.loads(f.read())
-#    f.close()
-#print(f'loaded {len(cars)} existing cars')
-#before_len = len(cars)
-#newcars = 0
+if os.path.exists(filename):
+    f=open(filename, 'r')
+    cars = json.loads(f.read())
+    f.close()
+print(f'loaded {len(cars)} existing cars')
+before_len = len(cars)
+newcars = 0
 
 print('scraping inventory')
 page_count = int(driver.find_elements(By.XPATH, "//li[@class='paginate_button page-item ']/a")[-1].get_attribute('innerHTML'))
@@ -58,12 +62,13 @@ for page in tqdm(range(page_count)):
             car = {}
     
     #        car['vin'] = re.search("VIN: (\w*)", car_e.text).group(1)
+            car['vin'] = car_e.find_element(By.XPATH, "./td[@data-label='vin']").get_attribute('innerHTML')
     
             # check if car has already been scraped
-    #        existing_car = findcar(cars, car['vin']) 
-    #        if existing_car != None:
-    #            existing_car['last_seen'] = arrow.utcnow().isoformat()
-    #            continue;
+            existing_car = findcar(cars, car['vin']) 
+            if existing_car != None:
+                existing_car['last_seen'] = arrow.utcnow().isoformat()
+                continue;
     
             car['year'] = car_e.find_element(By.XPATH, "./td[@data-label='Year']").get_attribute('innerHTML')
             car['make'] = car_e.find_element(By.XPATH, "./td[@data-label='Make']").get_attribute('innerHTML')
@@ -71,8 +76,7 @@ for page in tqdm(range(page_count)):
             car['color'] = car_e.find_element(By.XPATH, "./td[@data-label='Color']").get_attribute('innerHTML')
             car['engine'] = car_e.find_element(By.XPATH, "./td[@data-label='Engine']").get_attribute('innerHTML')
             car['row'] = car_e.find_element(By.XPATH, "./td[@data-label='Row']").get_attribute('innerHTML')
-            car['arrived'] = car_e.find_element(By.XPATH, "./td[@data-label='Arrived']").get_attribute('innerHTML')
-            car['vin'] = car_e.find_element(By.XPATH, "./td[@data-label='vin']").get_attribute('innerHTML')
+            car['available_date'] = car_e.find_element(By.XPATH, "./td[@data-label='Arrived']").get_attribute('innerHTML')
 #            print(car)
     
     #        r = re.compile("(\d{4}) ([\w\-]*) ([\w\- ]*).*\nColor")
@@ -87,11 +91,11 @@ for page in tqdm(range(page_count)):
     #        getparam('stock #', "Stock #: (\w*.\w)", 1)
     #        getparam('available_date', "Available: ([\d/]*)", 1)
     #        car['image_url'] = car_e.find_element(By.XPATH, "./a[1]/img[1]").get_attribute("src")
-    #        car['first_seen'] = arrow.utcnow().isoformat()
-    #        car['last_seen'] = arrow.utcnow().isoformat()
-    #        car['available'] = "true"
+            car['first_seen'] = arrow.utcnow().isoformat()
+            car['last_seen'] = arrow.utcnow().isoformat()
+            car['available'] = "true"
             cars.append(car)
-    #        newcars+=1
+            newcars+=1
     #        print(f"{car['year']} {car['make']} {car['model']} {car['vin']} {car['image_url']}")
         except Exception:
             print(traceback.format_exc())
@@ -107,9 +111,17 @@ for page in tqdm(range(page_count)):
             pass
     
 # TODO check for cars that aren't there any more
+became_unavailable = 0
+unavailable_count = 0
+for car in cars:
+    if car['available'] == "true" and arrow.get(car['last_seen']) < time_start:
+        car['available'] = "false"
+        became_unavailable += 1
+    if car['available'] == "false":
+        unavailable_count += 1
 
-#print(f'prev {before_len}, new total {len(cars)}, with {newcars} new cars found')
-print(f'{len(cars)} cars found')
+print(f'prev {before_len}, new total {len(cars)}, with {newcars} new cars found')
+print(f'unavailable: {unavailable_count}, no longer available since last scrape: {became_unavailable}')
 
 with open('cars_cfpnp.json', 'w') as f:
     f.write(json.dumps(cars, indent=4))

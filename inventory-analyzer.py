@@ -12,14 +12,16 @@ import matplotlib.pyplot as plt
 
 sns.set_theme()
 
-cars={}
-if os.path.exists('cars.json'):
-    f=open('cars.json', 'r')
-    cars = json.loads(f.read())
-    f.close()
-print(f'loaded {len(cars)} existing cars')
-
-cars_df = pd.DataFrame(cars)
+def load_car_data(filename):
+    cars={}
+    if os.path.exists(filename):
+        f=open(filename, 'r')
+        cars = json.loads(f.read())
+        f.close()
+    print(f'loaded {len(cars)} existing cars')
+    
+    cars_df = pd.DataFrame(cars)
+    return cars_df
 
 #sns.displot(cars_df, x="make")
 #
@@ -52,21 +54,21 @@ cars_df = pd.DataFrame(cars)
 # MAKES & MODELS
 #########################################################
 
-models = {}
-for car in cars:
-    try:
-        models[f"{car['year']} {car['make']} {car['model']}"]
-    except KeyError:
-        models[f"{car['year']} {car['make']} {car['model']}"] = 0
-    models[f"{car['year']} {car['make']} {car['model']}"] += 1
+# models = {}
+# for car in cars:
+#     try:
+#         models[f"{car['year']} {car['make']} {car['model']}"]
+#     except KeyError:
+#         models[f"{car['year']} {car['make']} {car['model']}"] = 0
+#     models[f"{car['year']} {car['make']} {car['model']}"] += 1
 
-models2 = [(x, models[x]) for x in models]
-models2.sort(key=lambda model: model[1], reverse=True)
-models3={}
-models3['model'] = [x[0] for x in models2[:20]]
-models3['count'] = [x[1] for x in models2[:20]]
+# models2 = [(x, models[x]) for x in models]
+# models2.sort(key=lambda model: model[1], reverse=True)
+# models3={}
+# models3['model'] = [x[0] for x in models2[:20]]
+# models3['count'] = [x[1] for x in models2[:20]]
 
-sns.barplot(y='model', x='count', data=models3, orient='h')
+# sns.barplot(y='model', x='count', data=models3, orient='h')
 
-plt.show()
+# plt.show()
 
