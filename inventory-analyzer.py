@@ -31,6 +31,7 @@ def parse_engine_string(engine_string):
     result['type'] = match.group(1)
     result['cylinders'] = int(match.group(2))
     result['displacement'] = float(match.group(3))
+    result['info'] = match.group(4)
     return result
 
 #sns.displot(cars_df, x="make")
