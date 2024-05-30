@@ -2,3 +2,4 @@ venv
 selenium
 *.json
 *.swp
+.ipynb_checkpoints

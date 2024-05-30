@@ -23,6 +23,16 @@ def load_car_data(filename):
     cars_df = pd.DataFrame(cars)
     return cars_df
 
+parse_engine_exp = re.compile('(\w)(\d*), (\d*\.\d*)L;? ?(.*)')
+def parse_engine_string(engine_string):
+    match = parse_engine_exp.match(engine_string)
+    if match == None: return None
+    result = {}
+    result['type'] = match.group(1)
+    result['cylinders'] = int(match.group(2))
+    result['displacement'] = float(match.group(3))
+    return result
+
 #sns.displot(cars_df, x="make")
 #
 #plt.show()
